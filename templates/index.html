@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wizard Form</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+  <link href="
+https://cdn.jsdelivr.net/npm/sweetalert2@11.12.3/dist/sweetalert2.min.css
+" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.1.0/css/dataTables.dataTables.min.css">
+</head>
+
+<body>
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-6">
+        <h2>Recipient Details</h2>
+        <div id="step2">
+          <div class="mb-3">
+            <label for="recipient_name" class="form-label">Recipient Name *</label>
+            <input type="text" class="form-control" id="recipient_name" name="recipient_name" required />
+          </div>
+          <div class="mb-3">
+            <label for="recipient_email" class="form-label">Recipient Email *</label>
+            <input type="email" class="form-control" id="recipient_email" name="recipient_email" required />
+            <div class="invalid-feedback">
+              Please enter a valid email address.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="private_notes" class="form-label">Private Notes</label>
+            <textarea class="form-control" id="private_notes" name="private_notes" rows="4"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="fileInput" class="form-label">Choose File:</label>
+            <input type="file" class="form-control-file" id="fileInput" name="file" accept=".txt,.pdf,.doc,.docx" />
+          </div>
+          <button type="button" class="btn btn-primary" id="submit-form">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+    </br>
+    <h2>Zoho Sign Documents</h2>
+    <table id="documentsTable" class="table table-striped">
+      <thead>
+        <tr>
+          <th>Request Name</th>
+          <th>Document IDs</th>
+          <th>Document Name</th>
+          <th>Request Status</th>
+          <th>Reminder Period</th>
+          <th>Expiration Days</th>
+          <th>Templates Used</th>
+          <th>Owner Fullname</th>
+          <th>Request Id</th>
+          <th>Create Date</th>
+          <!-- <th>Action</th> -->
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Table body will be populated dynamically with jQuery -->
+      </tbody>
+    </table>
+  </div>
+
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+    integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+    integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+    crossorigin="anonymous"></script>
+  <script src="
+https://cdn.jsdelivr.net/npm/sweetalert2@11.12.3/dist/sweetalert2.all.min.js
+"></script>
+  <script src="https://cdn.datatables.net/2.1.0/js/dataTables.min.js"></script>
+  <script>
+    var function_for_table
+    $(document).ready(function () {
+      $("#submit-form").click(function (event) {
+        event.preventDefault();
+
+        var recipient_name = $("#recipient_name").val();
+        console.log("🚀 ~ recipient_name:", recipient_name);
+        var recipient_email = $("#recipient_email").val();
+        var private_notes = $("#private_notes").val();
+
+        var formData = new FormData();
+        formData.append("recipient_name", recipient_name);
+        formData.append("recipient_email", recipient_email);
+        formData.append("private_notes", private_notes);
+        formData.append("file", $("#fileInput")[0].files[0]);
+
+        sendData(formData);
+      });
+
+      fetchData();
+    });
+
+    // Function to fetch data and populate table
+    function fetchData() {
+      table = $('#documentsTable').DataTable({
+        processing: true,
+        ajax: '/get-data',
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+        columns: [
+          { data: 'request_name' },
+          { data: 'document_ids' },
+          { data: 'document_name' },
+          { data: 'request_status' },
+          { data: 'reminder_period' },
+          { data: 'expiration_days' },
+          { data: 'templates_used' },
+          { data: 'owner_fullname' },
+          { data: 'request_id' },
+          { data: 'created_time' },
+          // {
+          //   data: null,
+          //   className: 'text-center',
+          //   render: function (row) {
+          //     var buttonHtml = '';
+          //     buttonHtml += ' <div class="btn-group" role="group" aria-label="Basic radio toggle button group">' +
+          //       ' <button type="button" class="btn btn-outline-success bx bxs-pencil download-btn" data-id="' + row.request_id + '">DOWNLOAD</button>' +
+          //       '</div>';
+          //     return buttonHtml;
+          //   }
+          // }
+        ],
+        order: [[9, 'desc']]
+      });
+
+      table.on('click', '.download-btn', function () {
+        var row = table.row($(this).closest('tr')).data(); // Get the data for the clicked row
+        var documentName = row.document_name;
+
+        Swal.fire({
+          title: 'Are you sure?',
+          text: "DOCUMENT: " + documentName,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, Download it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            Swal.fire(
+              'Downloading...',
+              'Your file will start downloading shortly.',
+              'success'
+            );
+
+            var document_id = $(this).attr('data-id');
+            console.log("🚀 ~ document_id:", document_id);
+
+            var formData = new FormData();
+            formData.append('document_id', document_id);
+
+            makeAjaxRequestData('/download-document', formData);
+          }
+        });
+      });
+    }
+
+    function makeAjaxRequestData(url, data) {
+      $.ajax({
+        url: url,
+        method: 'POST',
+        data: data,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+          console.log("🚀 ~ makeAjaxRequestData ~ response:", response)
+          window.open(response.document_url);
+
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+
+        }
+      }).done(function () {
+      })
+    }
+
+
+
+
+    function sendData(data) {
+      $.ajax({
+        url: "/submit-form",
+        type: "POST",
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function (data) {
+          Swal.fire({
+            title: "Success",
+            text:
+              "Status: " +
+              data["status"] +
+              " Owner of the Document: " +
+              data["owner_first_name"],
+            icon: "success",
+          });
+          console.log("Success:", data);
+          $('#documentsTable').DataTable().ajax.reload();
+        },
+        error: function (xhr, status, error) {
+          console.error("Error:", error);
+          Swal.fire({
+            title: "Error!",
+            text: "Status " + error,
+            icon: "error",
+          });
+        },
+      });
+    }
+  </script>
+</body>
+
+</html>
